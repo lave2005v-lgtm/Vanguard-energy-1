@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#0b0f1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -71,7 +71,7 @@ function idbSet(k,v){return db().then(function(d){var s=d.transaction("img","rea
 
 /* main render */
 function card(p,top){
-  var e=S.e[p],r=roll.st!=="idle",bg=imgs[p]?"linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url(\""+imgs[p]+"\")":"none";
+  var e=S.e[p],r=roll.st!=="idle",bg=imgs[p]?"linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url('"+imgs[p]+"')":"none";
   var v=roll.v,res="";
   if(roll.st==="result"){res=v[0]===v[1]?"DRAW":(v[p]>v[1-p]?"WIN":"LOSE")}
   var mid=r?'<div class="dieWrap"><div class="die'+(roll.st==="rolling"?" shake":"")+'" data-p="'+p+'">'+(v[p]||"?")+'</div><div class="res">'+(res||"D"+S.dice)+'</div></div>':'<div class="num">'+e+'</div>';
@@ -139,7 +139,7 @@ function sheet(){
   for(var p=0;p<2;p++){
     h+='<div class="sec"><h3>Player '+(p+1)+'</h3>'
      +'<div class="f"><input type="text" maxlength="16" data-f="name" data-p="'+p+'" value="'+esc(pend.names[p])+'"><input type="color" data-f="color" data-p="'+p+'" value="'+pend.colors[p]+'"></div>'
-     +'<div class="prev" style="background-color:'+pend.colors[p]+';background-image:'+(pend.imgs[p]?"linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url(\""+pend.imgs[p]+"\")":"none")+'"></div>'
+     +'<div class="prev" style="background-color:'+pend.colors[p]+';background-image:'+(pend.imgs[p]?"linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url('"+pend.imgs[p]+"')":"none")+'"></div>'
      +'<div class="f"><button class="sb" data-a="pick" data-p="'+p+'">'+(pend.imgs[p]?"Change image":"Choose image")+'</button>'
      +(pend.imgs[p]?'<button class="sb" data-a="rmimg" data-p="'+p+'">Remove</button>':"")
      +'<input type="file" id="file'+p+'" data-p="'+p+'" accept="image/jpeg,image/png,image/webp" hidden></div></div>';
