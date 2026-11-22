@@ -30,6 +30,11 @@ body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"
 .die.shake{animation:shake .18s infinite}
 @keyframes shake{0%{transform:rotate(-12deg) translateY(-4px)}50%{transform:rotate(12deg) translateY(4px)}100%{transform:rotate(-12deg) translateY(-4px)}}
 .res{font-weight:800;font-size:18px;min-height:22px;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+.res.win,.res.lose{padding:1px 12px;border-radius:12px;background:rgba(0,0,0,.45)}
+.res.win,.die.win{color:#4ade80}
+.res.lose,.die.lose{color:#ff5a5a}
+.die.win{border-color:#4ade80;background:rgba(0,0,0,.45)}
+.die.lose{border-color:#ff5a5a;background:rgba(0,0,0,.45)}
 .row{display:flex;gap:8px;width:100%}
 button{font:inherit;cursor:pointer;border:0;color:inherit}
 .big{flex:1;height:clamp(38px,6.5vh,54px);border-radius:16px;font-size:30px;font-weight:700;background:rgba(255,255,255,.22);color:#fff;border:2px solid rgba(255,255,255,.6)}
@@ -80,13 +85,13 @@ function card(p,top){
   var e=S.e[p],r=roll.st!=="idle",bg=imgs[p]?"linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url('"+imgs[p]+"')":"none";
   var v=roll.v,res="";
   if(roll.st==="result"){res=v[0]===v[1]?"DRAW":(v[p]>v[1-p]?"WIN":"LOSE")}
-  var mid=r?'<div class="mainArea"><div class="dieWrap"><div class="die'+(roll.st==="rolling"?" shake":"")+'" data-p="'+p+'">'+(v[p]||"?")+'</div><div class="res">'+(res||"D"+S.dice)+'</div></div></div>':'<div class="mainArea"><div class="num'+(S.fx&&S.dirs[p]>0?" up":(S.fx&&S.dirs[p]<0?" dn":""))+'">'+e+'</div></div>';
+  var rc=res==="WIN"?" win":(res==="LOSE"?" lose":"");var mid=r?'<div class="mainArea"><div class="dieWrap"><div class="die'+(roll.st==="rolling"?" shake":"")+rc+'" data-p="'+p+'">'+(v[p]||"?")+'</div><div class="res'+rc+'">'+(res||"D"+S.dice)+'</div></div></div>':'<div class="mainArea"><div class="num'+(S.fx&&S.dirs[p]>0?" up":(S.fx&&S.dirs[p]<0?" dn":""))+'">'+e+'</div></div>';
   function chip(l,d){var dis=r||clamp(e+d)===e;return '<button class="chip" data-a="adj" data-p="'+p+'" data-d="'+d+'"'+(dis?" disabled":"")+'>'+l+'</button>'}
   function big(l,d){var dis=r||clamp(e+d)===e;return '<button class="big" data-a="adj" data-p="'+p+'" data-d="'+d+'"'+(dis?" disabled":"")+'>'+l+'</button>'}
   return '<section class="card'+(top?" top":"")+'" style="background-color:'+S.colors[p]+';background-image:'+bg+'">'
     +'<div class="name">'+esc(S.names[p])+'</div>'+mid
     +'<div style="width:100%;display:flex;flex-direction:column;gap:8px"><div class="row">'+big("&minus;",-1)+big("+",1)+'</div>'
-    +'<div class="row">'+chip("EB &minus;7",-7)+chip("EB &minus;1",-1)+chip("EC +1",1)+chip("EC +3",3)+'</div></div></section>';
+    +'<div class="row">'+chip("EB &minus;3",-3)+chip("EB &minus;1",-1)+chip("EC +1",1)+chip("EC +3",3)+'</div></div></section>';
 }
 function render(){
   var topP=S.swapped?0:1,botP=1-topP,st=roll.st;
