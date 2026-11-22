@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#0b0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Vanguard Energy Manager</title>
+<style>
+:root{--bg:#e9edf5;--panel:#fff;--ink:#111827;--line:#cbd5e1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0f1a;--panel:#161c2c;--ink:#f1f5f9;--line:#2b3550}}
+:root[data-theme="dark"]{--bg:#0b0f1a;--panel:#161c2c;--ink:#f1f5f9;--line:#2b3550}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+#app{height:100%;display:flex;flex-direction:column;gap:8px;padding:8px;max-width:640px;margin:0 auto}
+.card{flex:1;min-height:0;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:10px 12px;color:#fff;background-size:cover;background-position:center;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.card.top{transform:rotate(180deg)}
+.name{font-weight:700;font-size:18px;letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.num{font-size:clamp(72px,19vh,170px);font-weight:800;line-height:1;text-shadow:0 2px 10px rgba(0,0,0,.6);font-variant-numeric:tabular-nums}
+.dieWrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.die{width:clamp(84px,18vh,130px);height:clamp(84px,18vh,130px);border-radius:22px;background:rgba(255,255,255,.18);border:3px solid #fff;display:grid;place-items:center;font-size:clamp(44px,10vh,80px);font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.die.shake{animation:shake .18s infinite}
+@keyframes shake{0%{transform:rotate(-12deg) translateY(-4px)}50%{transform:rotate(12deg) translateY(4px)}100%{transform:rotate(-12deg) translateY(-4px)}}
+.res{font-weight:800;font-size:18px;min-height:22px;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+.row{display:flex;gap:8px;width:100%}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.big{flex:1;height:54px;border-radius:16px;font-size:30px;font-weight:700;background:rgba(255,255,255,.22);color:#fff;border:2px solid rgba(255,255,255,.6)}
+.chip{flex:1;height:44px;border-radius:14px;font-size:14px;font-weight:700;background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.5)}
+.card button:disabled{opacity:.35;cursor:default}
+.mid{display:flex;flex-direction:column;gap:6px}
+#rollBtn{height:54px;border-radius:16px;font-size:18px;font-weight:800;letter-spacing:1px;background:#f59e0b;color:#1f1300}
+#rollBtn:disabled{opacity:.7}
+.tools{display:flex;gap:6px}
+.tool{flex:1;height:44px;border-radius:12px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;font-weight:600}
+.info{text-align:center;font-size:13px;min-height:16px;opacity:.8}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:12px;z-index:20}
+#modal.on{display:flex}
+.sheet{background:var(--panel);color:var(--ink);border-radius:22px;padding:16px;width:100%;max-width:480px;max-height:100%;overflow-y:auto;-webkit-user-select:auto;user-select:auto}
+.sheet h2{margin:0 0 10px;font-size:20px}
+.sec{border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px}
+.sec h3{margin:0 0 8px;font-size:15px}
+.f{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.f input[type=text],select{flex:1;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 10px;font:inherit}
+input[type=color]{width:48px;height:40px;border:1px solid var(--line);border-radius:10px;background:none;padding:2px}
+.prev{height:90px;border-radius:12px;background-size:cover;background-position:center;margin-bottom:8px}
+.sb{height:40px;padding:0 14px;border-radius:10px;background:var(--bg);color:var(--ink);border:1px solid var(--line);font-weight:600}
+.pri{background:#2563eb;color:#fff;border:0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"><div class="sheet" id="sheet"></div></div>
+<script>
+(function(){
+var DEF={names:["Player 1","Player 2"],colors:["#1d4ed8","#b91c1c"],dice:6,swapped:false,e:[0,0]};
+var S=JSON.parse(JSON.stringify(DEF)),imgs=[null,null],hist=[],roll={st:"idle",v:[0,0]},pend=null,timer=null;
+var $=function(s){return document.querySelector(s)};
+var esc=function(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+var clamp=function(n){return Math.max(0,Math.min(10,n))};
+
+/* storage */
+function save(){try{localStorage.setItem("vem",JSON.stringify(S))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem("vem"));if(d){S=Object.assign(S,d)}}catch(e){}}
+function db(){return new Promise(function(res,rej){var r=indexedDB.open("vem",1);r.onupgradeneeded=function(){r.result.createObjectStore("img")};r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)}})}
+function idbGet(k){return db().then(function(d){return new Promise(function(r){var q=d.transaction("img").objectStore("img").get(k);q.onsuccess=function(){r(q.result||null)};q.onerror=function(){r(null)}})}).catch(function(){return null})}
+function idbSet(k,v){return db().then(function(d){var s=d.transaction("img","readwrite").objectStore("img");v?s.put(v,k):s["delete"](k)}).catch(function(){})}
+
+/* main render */
+function card(p,top){
+  var e=S.e[p],r=roll.st!=="idle",bg=imgs[p]?"linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url(\""+imgs[p]+"\")":"none";
+  var v=roll.v,res="";
+  if(roll.st==="result"){res=v[0]===v[1]?"DRAW":(v[p]>v[1-p]?"WIN":"LOSE")}
+  var mid=r?'<div class="dieWrap"><div class="die'+(roll.st==="rolling"?" shake":"")+'" data-p="'+p+'">'+(v[p]||"?")+'</div><div class="res">'+(res||"D"+S.dice)+'</div></div>':'<div class="num">'+e+'</div>';
+  function chip(l,d){var dis=r||clamp(e+d)===e;return '<button class="chip" data-a="adj" data-p="'+p+'" data-d="'+d+'"'+(dis?" disabled":"")+'>'+l+'</button>'}
+  function big(l,d){var dis=r||clamp(e+d)===e;return '<button class="big" data-a="adj" data-p="'+p+'" data-d="'+d+'"'+(dis?" disabled":"")+'>'+l+'</button>'}
+  return '<section class="card'+(top?" top":"")+'" style="background-color:'+S.colors[p]+';background-image:'+bg+'">'
+    +'<div class="name">'+esc(S.names[p])+'</div>'+mid
+    +'<div style="width:100%;display:flex;flex-direction:column;gap:8px"><div class="row">'+big("&minus;",-1)+big("+",1)+'</div>'
+    +'<div class="row">'+chip("EC +1",1)+chip("EC +3",3)+chip("EB &minus;1",-1)+chip("EB &minus;7",-7)+'</div></div></section>';
+}
+function render(){
+  var topP=S.swapped?0:1,botP=1-topP,st=roll.st;
+  var label=st==="idle"?"ROLL BOTH DICE":st==="rolling"?"ROLLING...":"RETURN TO ENERGY";
+  var info=st==="result"&&roll.v[0]===roll.v[1]?"Tie. Return, then roll again.":"";
+  $("#app").innerHTML=card(topP,true)
+   +'<div class="mid"><button id="rollBtn" data-a="roll"'+(st==="rolling"?" disabled":"")+'>'+label+'</button><div class="info">'+info+'</div>'
+   +'<div class="tools"><button class="tool" data-a="undo"'+(hist.length&&st==="idle"?"":" disabled")+'>&#8630; Undo</button>'
+   +'<button class="tool" data-a="reset"'+(st==="idle"?"":" disabled")+'>&#10227; Reset</button>'
+   +'<button class="tool" data-a="roll"'+(st==="rolling"?" disabled":"")+'>&#127922; Dice</button>'
+   +'<button class="tool" data-a="swap">&#8645; Switch</button>'
+   +'<button class="tool" data-a="settings">&#9881; Settings</button></div></div>'
+   +card(botP,false);
+}
+
+/* actions */
+function adj(p,d){var n=clamp(S.e[p]+d);if(n===S.e[p])return;hist.push(S.e.slice());if(hist.length>50)hist.shift();S.e[p]=n;save();render()}
+function rollDice(){
+  if(roll.st==="rolling")return;
+  if(roll.st==="result"){roll.st="idle";render();return}
+  roll.st="rolling";roll.v=[0,0];render();
+  var t0=Date.now();
+  timer=setInterval(function(){
+    document.querySelectorAll(".die").forEach(function(el){el.textContent=1+Math.floor(Math.random()*S.dice)});
+    if(Date.now()-t0>1300){
+      clearInterval(timer);timer=null;
+      roll.v=[1+Math.floor(Math.random()*S.dice),1+Math.floor(Math.random()*S.dice)];
+      roll.st="result";render();
+    }
+  },70);
+}
+document.addEventListener("click",function(ev){
+  var b=ev.target.closest("[data-a]");if(!b||b.disabled)return;
+  var a=b.dataset.a;
+  if(a==="adj")adj(+b.dataset.p,+b.dataset.d);
+  else if(a==="roll")rollDice();
+  else if(a==="undo"){if(hist.length){S.e=hist.pop();save();render()}}
+  else if(a==="reset"){hist.push(S.e.slice());S.e=[0,0];save();render()}
+  else if(a==="swap"){S.swapped=!S.swapped;save();render()}
+  else if(a==="settings")openSettings();
+  else if(a==="pick")$("#file"+b.dataset.p).click();
+  else if(a==="rmimg"){pend.imgs[+b.dataset.p]=null;sheet()}
+  else if(a==="defaults"){var im=pend.imgs;pend=JSON.parse(JSON.stringify({names:DEF.names,colors:DEF.colors,dice:DEF.dice}));pend.imgs=[null,null];sheet()}
+  else if(a==="cancel")closeSettings();
+  else if(a==="save")commit();
+});
+
+/* settings */
+function openSettings(){
+  pend={names:S.names.slice(),colors:S.colors.slice(),dice:S.dice,imgs:imgs.slice()};
+  sheet();$("#modal").classList.add("on");
+}
+function closeSettings(){$("#modal").classList.remove("on");pend=null}
+function sheet(){
+  var h='<h2>Settings</h2>';
+  for(var p=0;p<2;p++){
+    h+='<div class="sec"><h3>Player '+(p+1)+'</h3>'
+     +'<div class="f"><input type="text" maxlength="16" data-f="name" data-p="'+p+'" value="'+esc(pend.names[p])+'"><input type="color" data-f="color" data-p="'+p+'" value="'+pend.colors[p]+'"></div>'
+     +'<div class="prev" style="background-color:'+pend.colors[p]+';background-image:'+(pend.imgs[p]?"linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url(\""+pend.imgs[p]+"\")":"none")+'"></div>'
+     +'<div class="f"><button class="sb" data-a="pick" data-p="'+p+'">'+(pend.imgs[p]?"Change image":"Choose image")+'</button>'
+     +(pend.imgs[p]?'<button class="sb" data-a="rmimg" data-p="'+p+'">Remove</button>':"")
+     +'<input type="file" id="file'+p+'" data-p="'+p+'" accept="image/jpeg,image/png,image/webp" hidden></div></div>';
+  }
+  h+='<div class="sec"><h3>Dice</h3><div class="f"><select data-f="dice">';
+  [4,6,8,10,12,20].forEach(function(d){h+='<option value="'+d+'"'+(pend.dice===d?" selected":"")+'>D'+d+'</option>'});
+  h+='</select></div></div><div class="f"><button class="sb" data-a="defaults">Restore defaults</button></div>'
+   +'<div class="f"><button class="sb" data-a="cancel" style="flex:1">Cancel</button><button class="sb pri" data-a="save" style="flex:1">Save</button></div>';
+  $("#sheet").innerHTML=h;
+}
+document.addEventListener("input",function(ev){
+  var t=ev.target;if(!pend||!t.dataset.f)return;
+  if(t.dataset.f==="name")pend.names[+t.dataset.p]=t.value;
+  else if(t.dataset.f==="color"){pend.colors[+t.dataset.p]=t.value;var pv=document.querySelectorAll(".prev")[+t.dataset.p];if(pv)pv.style.backgroundColor=t.value}
+  else if(t.dataset.f==="dice")pend.dice=+t.value;
+});
+document.addEventListener("change",function(ev){
+  var t=ev.target;if(!pend||t.type!=="file"||!t.files[0])return;
+  var f=t.files[0],p=+t.dataset.p;
+  if(!/^image\/(jpeg|png|webp)$/.test(f.type)){alert("Please choose a JPG, PNG or WEBP image.");return}
+  var url=URL.createObjectURL(f),im=new Image();
+  im.onload=function(){
+    var m=1280,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");
+    c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+    c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+    pend.imgs[p]=c.toDataURL("image/jpeg",.85);URL.revokeObjectURL(url);sheet();
+  };
+  im.onerror=function(){alert("Could not read this image.")};
+  im.src=url;
+});
+function commit(){
+  S.names=pend.names.map(function(n,i){return n.trim()||DEF.names[i]});
+  S.colors=pend.colors.slice();S.dice=pend.dice;imgs=pend.imgs.slice();
+  save();idbSet("img0",imgs[0]);idbSet("img1",imgs[1]);
+  closeSettings();roll={st:"idle",v:[0,0]};render();
+}
+
+/* init */
+load();render();
+Promise.all([idbGet("img0"),idbGet("img1")]).then(function(r){imgs=r;if(roll.st==="idle")render()});
+})();
+</script>
+<script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
+</body>
+</html>
