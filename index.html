@@ -15,21 +15,25 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0f1a;--panel:#161c2c;--ink:#f1f5f9;--line:#2b3550}}
 :root[data-theme="dark"]{--bg:#0b0f1a;--panel:#161c2c;--ink:#f1f5f9;--line:#2b3550}
 html,body{height:100%;margin:0}
+@supports (height:100dvh){html{height:100dvh}}
 body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
 #app{height:100%;display:flex;flex-direction:column;gap:8px;padding:8px;max-width:640px;margin:0 auto}
-.card{flex:1;min-height:0;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:10px 12px;color:#fff;background-size:cover;background-position:center;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.card{flex:1;min-height:0;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 10px;gap:6px;overflow:hidden;color:#fff;background-size:cover;background-position:center;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 .card.top{transform:rotate(180deg)}
 .name{font-weight:700;font-size:18px;letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.num{font-size:clamp(72px,19vh,170px);font-weight:800;line-height:1;text-shadow:0 2px 10px rgba(0,0,0,.6);font-variant-numeric:tabular-nums}
+.mainArea{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.num{font-size:clamp(56px,13vh,150px);font-weight:800;line-height:1.1;padding:0 22px;border-radius:22px;text-shadow:0 2px 10px rgba(0,0,0,.6);font-variant-numeric:tabular-nums;transition:color .2s,background .2s}
+.num.up{color:#4ade80;background:rgba(0,0,0,.45)}
+.num.dn{color:#ff5a5a;background:rgba(0,0,0,.45)}
 .dieWrap{display:flex;flex-direction:column;align-items:center;gap:4px}
-.die{width:clamp(84px,18vh,130px);height:clamp(84px,18vh,130px);border-radius:22px;background:rgba(255,255,255,.18);border:3px solid #fff;display:grid;place-items:center;font-size:clamp(44px,10vh,80px);font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.die{width:clamp(64px,13vh,120px);height:clamp(64px,13vh,120px);border-radius:22px;background:rgba(255,255,255,.18);border:3px solid #fff;display:grid;place-items:center;font-size:clamp(34px,8vh,70px);font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.5)}
 .die.shake{animation:shake .18s infinite}
 @keyframes shake{0%{transform:rotate(-12deg) translateY(-4px)}50%{transform:rotate(12deg) translateY(4px)}100%{transform:rotate(-12deg) translateY(-4px)}}
 .res{font-weight:800;font-size:18px;min-height:22px;text-shadow:0 1px 4px rgba(0,0,0,.7)}
 .row{display:flex;gap:8px;width:100%}
 button{font:inherit;cursor:pointer;border:0;color:inherit}
-.big{flex:1;height:54px;border-radius:16px;font-size:30px;font-weight:700;background:rgba(255,255,255,.22);color:#fff;border:2px solid rgba(255,255,255,.6)}
-.chip{flex:1;height:44px;border-radius:14px;font-size:14px;font-weight:700;background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.5)}
+.big{flex:1;height:clamp(38px,6.5vh,54px);border-radius:16px;font-size:30px;font-weight:700;background:rgba(255,255,255,.22);color:#fff;border:2px solid rgba(255,255,255,.6)}
+.chip{flex:1;height:clamp(34px,5.5vh,44px);border-radius:14px;font-size:14px;font-weight:700;background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.5)}
 .card button:disabled{opacity:.35;cursor:default}
 .mid{display:flex;flex-direction:column;gap:6px}
 #rollBtn{height:54px;border-radius:16px;font-size:18px;font-weight:800;letter-spacing:1px;background:#f59e0b;color:#1f1300}
@@ -49,6 +53,8 @@ input[type=color]{width:48px;height:40px;border:1px solid var(--line);border-rad
 .prev{height:90px;border-radius:12px;background-size:cover;background-position:center;margin-bottom:8px}
 .sb{height:40px;padding:0 14px;border-radius:10px;background:var(--bg);color:var(--ink);border:1px solid var(--line);font-weight:600}
 .pri{background:#2563eb;color:#fff;border:0}
+.f label{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px}
+input[type=checkbox]{width:22px;height:22px;flex:none}
 </style>
 </head>
 <body>
@@ -56,7 +62,7 @@ input[type=color]{width:48px;height:40px;border:1px solid var(--line);border-rad
 <div id="modal"><div class="sheet" id="sheet"></div></div>
 <script>
 (function(){
-var DEF={names:["Player 1","Player 2"],colors:["#1d4ed8","#b91c1c"],dice:6,swapped:false,e:[0,0]};
+var DEF={names:["Player 1","Player 2"],colors:["#1d4ed8","#b91c1c"],dice:6,swapped:false,e:[0,0],fx:true,dirs:[0,0]};
 var S=JSON.parse(JSON.stringify(DEF)),imgs=[null,null],hist=[],roll={st:"idle",v:[0,0]},pend=null,timer=null;
 var $=function(s){return document.querySelector(s)};
 var esc=function(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
@@ -74,13 +80,13 @@ function card(p,top){
   var e=S.e[p],r=roll.st!=="idle",bg=imgs[p]?"linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url('"+imgs[p]+"')":"none";
   var v=roll.v,res="";
   if(roll.st==="result"){res=v[0]===v[1]?"DRAW":(v[p]>v[1-p]?"WIN":"LOSE")}
-  var mid=r?'<div class="dieWrap"><div class="die'+(roll.st==="rolling"?" shake":"")+'" data-p="'+p+'">'+(v[p]||"?")+'</div><div class="res">'+(res||"D"+S.dice)+'</div></div>':'<div class="num">'+e+'</div>';
+  var mid=r?'<div class="mainArea"><div class="dieWrap"><div class="die'+(roll.st==="rolling"?" shake":"")+'" data-p="'+p+'">'+(v[p]||"?")+'</div><div class="res">'+(res||"D"+S.dice)+'</div></div></div>':'<div class="mainArea"><div class="num'+(S.fx&&S.dirs[p]>0?" up":(S.fx&&S.dirs[p]<0?" dn":""))+'">'+e+'</div></div>';
   function chip(l,d){var dis=r||clamp(e+d)===e;return '<button class="chip" data-a="adj" data-p="'+p+'" data-d="'+d+'"'+(dis?" disabled":"")+'>'+l+'</button>'}
   function big(l,d){var dis=r||clamp(e+d)===e;return '<button class="big" data-a="adj" data-p="'+p+'" data-d="'+d+'"'+(dis?" disabled":"")+'>'+l+'</button>'}
   return '<section class="card'+(top?" top":"")+'" style="background-color:'+S.colors[p]+';background-image:'+bg+'">'
     +'<div class="name">'+esc(S.names[p])+'</div>'+mid
     +'<div style="width:100%;display:flex;flex-direction:column;gap:8px"><div class="row">'+big("&minus;",-1)+big("+",1)+'</div>'
-    +'<div class="row">'+chip("EC +1",1)+chip("EC +3",3)+chip("EB &minus;1",-1)+chip("EB &minus;7",-7)+'</div></div></section>';
+    +'<div class="row">'+chip("EB &minus;7",-7)+chip("EB &minus;1",-1)+chip("EC +1",1)+chip("EC +3",3)+'</div></div></section>';
 }
 function render(){
   var topP=S.swapped?0:1,botP=1-topP,st=roll.st;
@@ -97,7 +103,7 @@ function render(){
 }
 
 /* actions */
-function adj(p,d){var n=clamp(S.e[p]+d);if(n===S.e[p])return;hist.push(S.e.slice());if(hist.length>50)hist.shift();S.e[p]=n;save();render()}
+function adj(p,d){var n=clamp(S.e[p]+d);if(n===S.e[p])return;hist.push([S.e.slice(),S.dirs.slice()]);if(hist.length>50)hist.shift();S.e[p]=n;S.dirs[p]=d>0?1:-1;save();render()}
 function rollDice(){
   if(roll.st==="rolling")return;
   if(roll.st==="result"){roll.st="idle";render();return}
@@ -117,20 +123,20 @@ document.addEventListener("click",function(ev){
   var a=b.dataset.a;
   if(a==="adj")adj(+b.dataset.p,+b.dataset.d);
   else if(a==="roll")rollDice();
-  else if(a==="undo"){if(hist.length){S.e=hist.pop();save();render()}}
-  else if(a==="reset"){hist.push(S.e.slice());S.e=[0,0];save();render()}
+  else if(a==="undo"){if(hist.length){var h=hist.pop();S.e=h[0];S.dirs=h[1];save();render()}}
+  else if(a==="reset"){hist.push([S.e.slice(),S.dirs.slice()]);S.e=[0,0];S.dirs=[0,0];save();render()}
   else if(a==="swap"){S.swapped=!S.swapped;save();render()}
   else if(a==="settings")openSettings();
   else if(a==="pick")$("#file"+b.dataset.p).click();
   else if(a==="rmimg"){pend.imgs[+b.dataset.p]=null;sheet()}
-  else if(a==="defaults"){var im=pend.imgs;pend=JSON.parse(JSON.stringify({names:DEF.names,colors:DEF.colors,dice:DEF.dice}));pend.imgs=[null,null];sheet()}
+  else if(a==="defaults"){var im=pend.imgs;pend=JSON.parse(JSON.stringify({names:DEF.names,colors:DEF.colors,dice:DEF.dice,fx:DEF.fx}));pend.imgs=[null,null];sheet()}
   else if(a==="cancel")closeSettings();
   else if(a==="save")commit();
 });
 
 /* settings */
 function openSettings(){
-  pend={names:S.names.slice(),colors:S.colors.slice(),dice:S.dice,imgs:imgs.slice()};
+  pend={names:S.names.slice(),colors:S.colors.slice(),dice:S.dice,fx:S.fx,imgs:imgs.slice()};
   sheet();$("#modal").classList.add("on");
 }
 function closeSettings(){$("#modal").classList.remove("on");pend=null}
@@ -144,9 +150,9 @@ function sheet(){
      +(pend.imgs[p]?'<button class="sb" data-a="rmimg" data-p="'+p+'">Remove</button>':"")
      +'<input type="file" id="file'+p+'" data-p="'+p+'" accept="image/jpeg,image/png,image/webp" hidden></div></div>';
   }
-  h+='<div class="sec"><h3>Dice</h3><div class="f"><select data-f="dice">';
+  h+='<div class="sec"><h3>Dice &amp; display</h3><div class="f"><select data-f="dice">';
   [4,6,8,10,12,20].forEach(function(d){h+='<option value="'+d+'"'+(pend.dice===d?" selected":"")+'>D'+d+'</option>'});
-  h+='</select></div></div><div class="f"><button class="sb" data-a="defaults">Restore defaults</button></div>'
+  h+='</select></div><div class="f"><label><input type="checkbox" data-f="fx"'+(pend.fx?" checked":"")+'> Number color: green after add, red after subtract</label></div></div><div class="f"><button class="sb" data-a="defaults">Restore defaults</button></div>'
    +'<div class="f"><button class="sb" data-a="cancel" style="flex:1">Cancel</button><button class="sb pri" data-a="save" style="flex:1">Save</button></div>';
   $("#sheet").innerHTML=h;
 }
@@ -155,6 +161,7 @@ document.addEventListener("input",function(ev){
   if(t.dataset.f==="name")pend.names[+t.dataset.p]=t.value;
   else if(t.dataset.f==="color"){pend.colors[+t.dataset.p]=t.value;var pv=document.querySelectorAll(".prev")[+t.dataset.p];if(pv)pv.style.backgroundColor=t.value}
   else if(t.dataset.f==="dice")pend.dice=+t.value;
+  else if(t.dataset.f==="fx")pend.fx=t.checked;
 });
 document.addEventListener("change",function(ev){
   var t=ev.target;if(!pend||t.type!=="file"||!t.files[0])return;
@@ -172,7 +179,7 @@ document.addEventListener("change",function(ev){
 });
 function commit(){
   S.names=pend.names.map(function(n,i){return n.trim()||DEF.names[i]});
-  S.colors=pend.colors.slice();S.dice=pend.dice;imgs=pend.imgs.slice();
+  S.colors=pend.colors.slice();S.dice=pend.dice;S.fx=pend.fx;imgs=pend.imgs.slice();
   save();idbSet("img0",imgs[0]);idbSet("img1",imgs[1]);
   closeSettings();roll={st:"idle",v:[0,0]};render();
 }
